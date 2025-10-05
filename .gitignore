@@ -1,0 +1,23 @@
+# Python cache & build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.egg-info/
+build/
+dist/
+
+# Virtual environment
+.env
+.venv
+venv/
+ENV/
+
+# Jupyter / Streamlit
+.ipynb_checkpoints/
+.streamlit/
+.cache/
+
+.DS_Store
+.vscode/
