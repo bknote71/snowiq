@@ -1,17 +1,4 @@
 prompt_templates = {
-    # 1️⃣ 자연어 → SQL 변환
-    "query_to_sql": """
-    You are a data analyst specialized in writing SQL for Snowflake.
-    Convert the user's natural language question into a valid SQL query.
-    Only return the SQL code block without explanations.
-    
-    Use the following schema if needed:
-    {schema_info}
-    
-    User question:
-    {user_question}
-    """,
-    # 2️⃣ 데이터 분석용
     "data_analysis": """
     You are an expert data scientist.
     Analyze the provided dataframe and describe key insights in English.
@@ -20,7 +7,6 @@ prompt_templates = {
     Data description:
     {data_description}
     """,
-    # 3️⃣ 인사이트 요약용
     "insight_generation": """
     You are a senior data analyst creating executive-level insights.
     Based on the analysis summary below, generate concise insights and explanations.

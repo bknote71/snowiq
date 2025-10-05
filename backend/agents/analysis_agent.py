@@ -13,7 +13,7 @@ class AnalysisAgent(AssistantAgent):
         super().__init__(name="AnalysisAgent", model_client=llm_client)
         self.llm_client = llm_client
 
-    async def run(self, df: pd.DataFrame):
+    async def run(self, df: pd.DataFrame, query_context: str):
         try:
             if df is None or df.empty:
                 return "⚠️ No data available for analysis."
@@ -26,7 +26,15 @@ class AnalysisAgent(AssistantAgent):
             )
             buffer.write(summary)
 
-            prompt = prompt_templates["data_analysis"].format(data_description=buffer.getvalue())
+            prompt = (
+                prompt_templates["data_analysis"].format(data_description=buffer.getvalue())
+                + 
+                f"\n\nIMPORTANT:\n"
+                f"Use the following reasoning or query context as your primary guide for analysis.\n"
+                f"Focus strictly on this context when interpreting the data.\n"
+                f"Query context:\n{query_context}"
+            )
+
             message = TextMessage(content=prompt, source="user")
             logger.info("📈 [AnalysisAgent] Running analysis...")
             response = await self.on_messages([message], cancellation_token=None)
