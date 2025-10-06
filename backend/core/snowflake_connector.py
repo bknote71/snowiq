@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import re
 import threading
 import time
@@ -20,7 +24,7 @@ def _normalize_account(raw: str) -> str:
 
 
 def connect():
-    account = _normalize_account(os.getenv("SNOWFLAKE_ACCOUNT", ""))
+    account = os.getenv("SNOWFLAKE_ACCOUNT", "")
     user = os.getenv("SNOWFLAKE_USER", "")
     password = os.getenv("SNOWFLAKE_PASSWORD", "")
     warehouse = os.getenv("SNOWFLAKE_WAREHOUSE", "")
@@ -48,6 +52,7 @@ def fetch_df(query: str, params: Optional[dict] = None) -> pd.DataFrame:
     """쿼리 -> DataFrame"""
     conn = None
     try:
+        # todo: connection pool?
         conn = connect()
         cursor = conn.cursor()
         cursor.execute(query, params or {})
@@ -66,7 +71,7 @@ def fetch_df(query: str, params: Optional[dict] = None) -> pd.DataFrame:
             pass
 
 
-def start_periodic_fetch(name: str, query_factory: Callable[[], str], interval_sec: int = 10):
+def start_periodic_fetch(thread_id: str, query_factory: Callable[[], str], interval_sec: int = 3600 * 24):
     """
     주기적 fetch 실행
     - name: 캐시에 저장할 키
@@ -78,8 +83,11 @@ def start_periodic_fetch(name: str, query_factory: Callable[[], str], interval_s
         while True:
             try:
                 sql = query_factory()
+                if not sql:
+                    return None
+
                 df = fetch_df(sql)
-                cache.set(name, df)
+                cache.set(f"live_df_{thread_id}", df)
             except Exception as e:
                 pass
             time.sleep(max(1, interval_sec))
@@ -87,3 +95,14 @@ def start_periodic_fetch(name: str, query_factory: Callable[[], str], interval_s
     t = threading.Thread(target=_loop, daemon=True)
     t.start()
     return t
+
+
+# fetch test
+if __name__ == "__main__":
+    import os
+
+    # Snowflake 연결 테스트
+    print("Connecting to Snowflake...")
+    table = "maple_logs"
+    df = fetch_df(f"SELECT * FROM {table};")
+    print(df)

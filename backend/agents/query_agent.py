@@ -3,15 +3,13 @@ from autogen_agentchat.messages import TextMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from utils.prompt_templates import prompt_templates
 from utils.logger import logger
-from data.cache import cache
+from core.cache import cache
 
 import pandas as pd
 import io
 
 
 class QueryAgent(AssistantAgent):
-    """로컬 DataFrame 질의 전용"""
-
     def __init__(self, llm_client: OpenAIChatCompletionClient):
         super().__init__(name="QueryAgent", model_client=llm_client)
         self.llm_cliet = llm_client

@@ -28,4 +28,22 @@ prompt_templates = {
     User question:
     {user_question}
     """,
+    "summary_update": """
+    You are a conversation summarization assistant.
+    Your goal is to maintain a running summary of a chat thread.
+
+    You will be given:
+    - The previous summary of the conversation (if any)
+    - The old messages that will be removed from the recent context
+
+    Task:
+    Merge the previous summary and the content of the old messages into a new, concise summary.
+    Keep the summary factual, short (around 3–5 sentences), and in English.
+
+    Previous summary:
+    {old_summary}
+
+    Removed messages:
+    {removed_messages}
+    """,
 }
