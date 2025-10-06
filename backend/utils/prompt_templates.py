@@ -29,21 +29,21 @@ prompt_templates = {
     {user_question}
     """,
     "summary_update": """
-    You are a conversation summarization assistant.
-    Your goal is to maintain a running summary of a chat thread.
+    You are a summarization assistant responsible for maintaining a concise overview of an ongoing conversation thread.
 
     You will be given:
-    - The previous summary of the conversation (if any)
-    - The old messages that will be removed from the recent context
+    - The previous summary (if any)
+    - The most recent messages (in chronological order)
 
-    Task:
-    Merge the previous summary and the content of the old messages into a new, concise summary.
-    Keep the summary factual, short (around 3–5 sentences), and in English.
+    Your task:
+    1. Integrate the previous summary with the new recent messages.
+    2. Produce a concise, factual English summary (3–6 sentences).
+    3. Focus on key ideas, insights, or conclusions, not filler text.
 
     Previous summary:
     {old_summary}
 
-    Removed messages:
-    {removed_messages}
+    Recent messages:
+    {recent_messages}
     """,
 }

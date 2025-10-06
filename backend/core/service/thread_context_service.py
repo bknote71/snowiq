@@ -15,29 +15,20 @@ class ThreadContextService:
     def get_context(self, thread_id: str) -> ThreadContextModel:
         return thread_context_repository.find_by_thread_id(thread_id)
 
-    async def update_context(self, thread_id: str, user_msg: str, assitant_msg: str):
+    async def update_context(self, thread_id: str, user_msg: str, assistant_msg: str):
         context = self.get_context(thread_id)
 
-        context.recent_messages.append(MessageModel(role="user", content=user_msg, timestamp=datetime.utcnow()))
-        context.recent_messages.append(MessageModel(role="assistant", content=assistant_msg, timestamp=datetime.utcnow()))
+        context.messages.append(MessageModel(role="user", content=user_msg, timestamp=datetime.utcnow()))
+        context.messages.append(MessageModel(role="assistant", content=assistant_msg, timestamp=datetime.utcnow()))
 
-        if len(context.recent_messages) > MAX_RECENT_MESSAGES:
-            overflow_count = len(context.recent_messages) - MAX_RECENT_MESSAGES
-            old_messages = context.recent_messages[:overflow_count]
-            context.recent_messages = context.recent_messages[overflow_count:]
+        old_summary = context.summary or "(none)"
+        recent_subset = context.messages[-MAX_RECENT_MESSAGES:]
+        recent_text = "\n".join([f"{m.role}: {m.content}" for m in recent_subset])
 
-            old_summary = context.summary or "(none)"
-            removed_messages = "\n".join([f"{m.role}: {m.content}" for m in old_messages])
-
-            prompt = prompt_templates["summary_update"].format(
-                old_summary=old_summary or "(none)",
-                removed_messages=removed_messages,
-            )
-
-            new_summary = await self.summary_agent.run()
-            context.summary = new_summary
+        new_summary = await self.summary_agent.run(old_summary, recent_text)
+        context.summary = new_summary
 
         context.updated_at = datetime.utcnow()
-        thread_context_repository.update(context)
+        thread_context_repository.upsert(context)
 
         return context

@@ -16,5 +16,5 @@ class ThreadContextModel(BaseModel):
 
     thread_id: str
     summary: Optional[str] = None  # 전체 대화 요약 (summary_agent 가 업데이트)
-    recent_messages: list[MessageModel] = []  # 최근 메시지 N개
+    messages: list[MessageModel] = []  # 최근 메시지 N개
     updated_at: datetime = datetime.utcnow()  # 마지막 업데이트 시각

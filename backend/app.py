@@ -15,6 +15,7 @@ from core.snowflake_connector import start_periodic_fetch
 from core.cache import cache
 
 from core.model.thread_model import ThreadModel, CreateThreadRequest
+from core.model.thread_context_model import ThreadContextModel
 
 app = FastAPI(title="snowiq-backend")
 app.add_middleware(
@@ -71,17 +72,22 @@ async def startup_event():
 @app.post("/api/threads")
 def create_thread(req: CreateThreadRequest):
     thread: ThreadModel = thread_service.create_thread(req.schema, req.table_name)
-
-    fetch_thread: threading.Thread = start_periodic_fetch(
-        name=thread.thread_id, query_factory=lambda: f"SELECT * FROM {thread.schema_name}.{thread.table_name};"
-    )
-
-    # fetch_thread 등록
-    # 나중에 제거할 수 있도록
-    # 예) 일정 크기 이상 넘어가거나 혹은 일정 시간 이상 넘어가면 제거
-    THREAD_REGISTRY[thread.thread_id] = fetch_thread
-
     return thread
+
+
+@app.get("/api/threads")
+def get_thread(thread_id: str):
+    thread: ThreadModel = thread_service.get_therad(thread_id)
+    thread_context: ThreadContextModel = thread_context_service.get_context(thread_id)
+
+    response = {
+        "thread_id": thread.thread_id,
+        "schema_name": thread.schema_name,
+        "table_name": thread.table_name,
+        "messages": thread_context.messages,
+    }
+
+    return response
 
 
 @app.get("/chart")
@@ -95,15 +101,12 @@ def get_chart():
     return json.loads(fig.to_json())
 
 
-# @app.websocket("/chat")
-# async def websocket_default(websocket: WebSocket):
-#     await websocket.accept()
-#     await websocket.send_text("Connected without thread_id")
-
-
 @app.websocket("/chat/{thread_id}")
 async def websocket_insight(websocket: WebSocket, thread_id: str):
     await websocket.accept()
+
+    thread = thread_service.get_therad()
+    first = True
 
     try:
         while True:
@@ -112,6 +115,14 @@ async def websocket_insight(websocket: WebSocket, thread_id: str):
             if not user_question:
                 await websocket.send_text(json.dumps({}))
                 continue
+
+            if first:
+                fetch_thread: threading.Thread = start_periodic_fetch(
+                    name=thread.thread_id, query_factory=lambda: f"SELECT * FROM {thread.schema_name}.{thread.table_name};"
+                )
+
+                THREAD_REGISTRY[thread_id] = fetch_thread
+                first = False
 
             df: pd.DataFrame = cache.get(f"live_df_{thread_id}") or cache.get("live_df")
 
@@ -129,4 +140,7 @@ async def websocket_insight(websocket: WebSocket, thread_id: str):
             await websocket.send_text(end_mark)
 
     except WebSocketDisconnect:
+        # daemon thread의 경우 참조를 제거하면 GC에 의해서 정리된다고 합니다.
+        # - 정말일까나~?
+        THREAD_REGISTRY.pop(thread_id, None)
         print("WebSocket disconnected")

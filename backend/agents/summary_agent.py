@@ -10,5 +10,12 @@ class SummaryAgent(AssistantAgent):
         super().__init__(name="SummaryAgent", model_client=llm_client)
         self.llm_cliet = llm_client
 
-    async def run(self):
-        pass
+    async def run(self, old_summary: str, recent_messages: str) -> str:
+        prompt = prompt_templates["summary_update"].format(
+            old_summary=old_summary or "(none)",
+            recent_messages=recent_messages,
+        )
+
+        message = TextMessage(content=prompt, source="user")
+        response = await self.on_messages([message], cancellation_token=None)
+        return response.chat_message.content
